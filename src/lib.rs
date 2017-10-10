@@ -1,5 +1,6 @@
 extern crate futures;
 extern crate hyper;
+extern crate hyper_tls;
 extern crate tokio_core;
 
 use std::error::Error;
@@ -10,7 +11,11 @@ use std::io::{self, Write};
 use futures::{Future, Stream};
 use tokio_core::reactor::{Core, Handle, Remote};
 use hyper::client::{FutureResponse, HttpConnector};
-use hyper::Body;
+use hyper_tls::HttpsConnector;
+use hyper::{Body, Method, Request};
+use hyper::header::{Authorization, Basic};
+
+const BASE_URI: &str = "https://api.twilio.com/2010-04-01";
 
 #[cfg(test)]
 mod tests {
@@ -21,38 +26,43 @@ mod tests {
 pub struct Client {
     account_sid: String,
     auth_token: String,
-    remote: Remote,
-    client: hyper::Client<HttpConnector, Body>,
+    handle: Handle,
+    client: hyper::Client<HttpsConnector<HttpConnector>, Body>,
 }
 
 impl Client {
-    pub fn new(account_sid: &str, auth_token: &str) -> Result<Client, io::Error> {
-        let (tx, rx) = mpsc::channel();
-        let (tx1, rx1) = mpsc::channel();
-        thread::spawn(move || {
-            let mut core = Core::new().unwrap();
-            //let client = hyper::Client::new(&core.handle());
-            tx.send(core.handle());
-            tx1.send(core.remote());
-            core.run(futures::empty()).unwrap();
-        });
-        let handle = rx.recv().unwrap();
-        let remote = rx1.recv().unwrap();
-        let client = hyper::Client::new(&handle);
+    pub fn new(account_sid: &str, auth_token: &str, handle: &Handle) -> Result<Client, io::Error> {
+        let client = hyper::Client::configure()
+            .connector(HttpsConnector::new(4, handle).unwrap())
+            .build(handle);
         Ok(Client {
             account_sid: account_sid.to_string(),
             auth_token: auth_token.to_string(),
-            remote: remote,
+            handle: handle.clone(),
             client: client,
         })
     }
 
     pub fn send_request(&self) -> FutureResponse {
+        /*
         let uri = "http://httpbin.org/ip".parse().unwrap_or_else(|err| {
             println!("Problem with uri");
             process::exit(1);
         });
-        let get_task = self.client.get(uri);
+        */
+        let uri = format!(
+            "{}/Accounts/{}/Calls/{}.json",
+            BASE_URI,
+            self.account_sid,
+            "CA166b2ee048446651bfccad9cdba48418"
+        ).parse()
+            .unwrap();
+        let mut req: Request<Body> = Request::new(Method::Get, uri);
+        req.headers_mut().set(Authorization(Basic {
+            username: self.account_sid.to_owned(),
+            password: Some(self.auth_token.to_owned()),
+        }));
+        let get_task = self.client.request(req);
         return get_task;
     }
 }
