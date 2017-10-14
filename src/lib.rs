@@ -1,6 +1,10 @@
 extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
 extern crate tokio_core;
 
 use std::env;
@@ -22,6 +26,37 @@ const BASE_URI: &str = "https://api.twilio.com/2010-04-01";
 mod tests {
     #[test]
     fn it_works() {}
+}
+
+#[derive(Serialize, Deserialize)]
+struct Call {
+    sid: String,
+}
+
+trait Resource {
+    fn get(&self, client: &Client) -> Box<Future<Item = Self, Error = hyper::error::Error>>;
+    //fn post(&self) -> Box<Future<Item = Self, Error = io::Error>>;
+}
+
+impl Resource for Call {
+    fn get(&self, client: &Client) -> Box<Future<Item = Self, Error = hyper::error::Error>> {
+        let fut = client.send_request().and_then(|res| {
+            println!("Response: {}", res.status());
+            res.body().concat2()
+        })
+        .map(move |body| {
+            /*
+            let call_res = serde_json::from_slice(&body).map_err(|e| {
+                io::Error::new(
+                    io::ErrorKind::Other,
+                    e)
+            });
+            */
+            let call_res = serde_json::from_slice(&body).unwrap();
+            call_res
+        });
+        Box::new(fut)
+    }
 }
 
 pub struct Client {
@@ -51,12 +86,6 @@ impl Client {
     }
 
     pub fn send_request(&self) -> FutureResponse {
-        /*
-        let uri = "http://httpbin.org/ip".parse().unwrap_or_else(|err| {
-            println!("Problem with uri");
-            process::exit(1);
-        });
-        */
         let uri = format!(
             "{}/Accounts/{}/Calls/{}.json",
             BASE_URI,
