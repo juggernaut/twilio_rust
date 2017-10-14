@@ -4,10 +4,12 @@ extern crate tokio_core;
 
 extern crate twilio_rust;
 
+use std::env;
 use std::process;
 use std::io::{self, Write};
 use futures::{Future, Stream};
 use twilio_rust::Client;
+use tokio_core::reactor::Core;
 
 fn main() {
 	/*
@@ -33,14 +35,12 @@ fn main() {
 	});
 	*/
 
-	let client = Client::new("ac", "auth").unwrap();
-	client
-		.send_request()
-		.and_then(|res| {
-			println!("Response: {}", res.status());
-			res.body()
-				.for_each(|chunk| io::stdout().write_all(&chunk).map_err(From::from))
-		})
-		.wait();
-	println!("Ok this executed!");
+	let mut core = Core::new().unwrap();
+	let client = Client::new_from_env(&core.handle()).unwrap();
+	let work = client.send_request().and_then(|res| {
+		println!("Response: {}", res.status());
+		res.body()
+			.for_each(|chunk| io::stdout().write_all(&chunk).map_err(From::from))
+	});
+	core.run(work).unwrap();
 }

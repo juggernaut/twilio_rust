@@ -3,6 +3,7 @@ extern crate hyper;
 extern crate hyper_tls;
 extern crate tokio_core;
 
+use std::env;
 use std::error::Error;
 use std::process;
 use std::thread;
@@ -41,6 +42,12 @@ impl Client {
             handle: handle.clone(),
             client: client,
         })
+    }
+
+    pub fn new_from_env(handle: &Handle) -> Result<Client, io::Error> {
+        let account_sid = env::var("ACCOUNT_SID").expect("ACCOUNT_SID env variable must be set!");
+        let auth_token = env::var("AUTH_TOKEN").expect("AUTH_TOKEN env variable must be set!");
+        Self::new(&account_sid, &auth_token, handle)
     }
 
     pub fn send_request(&self) -> FutureResponse {
