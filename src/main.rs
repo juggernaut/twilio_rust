@@ -33,14 +33,23 @@ fn main() {
 		println!("Problem with running core");
 		process::exit(1);
 	});
-	*/
 
+	*/
 	let mut core = Core::new().unwrap();
 	let client = Client::new_from_env(&core.handle()).unwrap();
-	let work = client.send_request().and_then(|res| {
-		println!("Response: {}", res.status());
-		res.body()
-			.for_each(|chunk| io::stdout().write_all(&chunk).map_err(From::from))
-	});
+	let work = client
+		.get_call("CA166b2ee048446651bfccad9cdba48418")
+		.map(|call| {
+			println!(
+				"Call sid is {} and parent call sid is {}",
+				call.sid,
+				match call.parent_call_sid {
+					None => "none found",
+					Some(ref x) => x,
+				}
+			);
+			()
+		});
 	core.run(work).unwrap();
+	println!("This was executed!");
 }

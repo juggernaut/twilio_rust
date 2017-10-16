@@ -7,6 +7,8 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate tokio_core;
 
+use std::str;
+use std::option::Option;
 use std::env;
 use std::error::Error;
 use std::process;
@@ -29,34 +31,10 @@ mod tests {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Call {
-    sid: String,
-}
-
-trait Resource {
-    fn get(&self, client: &Client) -> Box<Future<Item = Self, Error = hyper::error::Error>>;
-    //fn post(&self) -> Box<Future<Item = Self, Error = io::Error>>;
-}
-
-impl Resource for Call {
-    fn get(&self, client: &Client) -> Box<Future<Item = Self, Error = hyper::error::Error>> {
-        let fut = client.send_request().and_then(|res| {
-            println!("Response: {}", res.status());
-            res.body().concat2()
-        })
-        .map(move |body| {
-            /*
-            let call_res = serde_json::from_slice(&body).map_err(|e| {
-                io::Error::new(
-                    io::ErrorKind::Other,
-                    e)
-            });
-            */
-            let call_res = serde_json::from_slice(&body).unwrap();
-            call_res
-        });
-        Box::new(fut)
-    }
+pub struct Call {
+    pub sid: String,
+    pub account_sid: String,
+    pub parent_call_sid: Option<String>,
 }
 
 pub struct Client {
@@ -85,20 +63,44 @@ impl Client {
         Self::new(&account_sid, &auth_token, handle)
     }
 
-    pub fn send_request(&self) -> FutureResponse {
+    pub fn get_call(
+        &self,
+        call_sid: &str,
+    ) -> Box<Future<Item = Call, Error = hyper::error::Error>> {
         let uri = format!(
             "{}/Accounts/{}/Calls/{}.json",
             BASE_URI,
             self.account_sid,
-            "CA166b2ee048446651bfccad9cdba48418"
+            call_sid
         ).parse()
             .unwrap();
         let mut req: Request<Body> = Request::new(Method::Get, uri);
+        let fut = self.send_request(req)
+            .and_then(|res| {
+                println!("Response: {}", res.status());
+                res.body().concat2()
+            })
+            .map(move |body| {
+                /*
+            let call_res = serde_json::from_slice(&body).map_err(|e| {
+                io::Error::new(
+                    io::ErrorKind::Other,
+                    e)
+            });
+            */
+                let debug_str = str::from_utf8(&body).unwrap();
+                println!("DEBUG: body is {}", debug_str);
+                let call_res = serde_json::from_slice(&body).unwrap();
+                call_res
+            });
+        Box::new(fut)
+    }
+
+    fn send_request(&self, mut req: Request<Body>) -> FutureResponse {
         req.headers_mut().set(Authorization(Basic {
             username: self.account_sid.to_owned(),
             password: Some(self.auth_token.to_owned()),
         }));
-        let get_task = self.client.request(req);
-        return get_task;
+        self.client.request(req)
     }
 }
