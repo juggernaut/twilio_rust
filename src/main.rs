@@ -1,3 +1,4 @@
+extern crate chrono;
 extern crate futures;
 extern crate hyper;
 extern crate tokio_core;
@@ -10,6 +11,7 @@ use std::io::{self, Write};
 use futures::{Future, Stream};
 use twilio_rust::Client;
 use tokio_core::reactor::Core;
+use chrono::prelude::*;
 
 fn main() {
 	/*
@@ -41,12 +43,13 @@ fn main() {
 		.get_call("CA166b2ee048446651bfccad9cdba48418")
 		.map(|call| {
 			println!(
-				"Call sid is {} and parent call sid is {}",
+				"Call sid is {}, parent call sid is {} and day of call is {:?}",
 				call.sid,
 				match call.parent_call_sid {
 					None => "none found",
 					Some(ref x) => x,
-				}
+				},
+				call.date_created.weekday()
 			);
 			()
 		});

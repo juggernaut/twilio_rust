@@ -1,3 +1,4 @@
+extern crate chrono;
 extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
@@ -17,6 +18,7 @@ use std::sync::mpsc;
 use std::io::{self, Write};
 use futures::{Future, Stream};
 use tokio_core::reactor::{Core, Handle, Remote};
+use chrono::prelude::*;
 use hyper::client::{FutureResponse, HttpConnector};
 use hyper_tls::HttpsConnector;
 use hyper::{Body, Method, Request};
@@ -29,12 +31,48 @@ mod tests {
     #[test]
     fn it_works() {}
 }
+mod my_date_format {
+    use serde::{self, Deserialize, Deserializer, Serializer};
+    use chrono::prelude::*;
+
+    const FORMAT: &'static str = "%a, %d %b %Y %T %z";
+
+    // The signature of a serialize_with function must follow the pattern:
+    //
+    //    fn serialize<S>(&T, S) -> Result<S::Ok, S::Error> where S: Serializer
+    //
+    // although it may also be generic over the input types T.
+    pub fn serialize<S>(date: &DateTime<Utc>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = format!("{}", date.format(FORMAT));
+        serializer.serialize_str(&s)
+    }
+
+    // The signature of a deserialize_with function must follow the pattern:
+    //
+    //    fn deserialize<D>(D) -> Result<T, D::Error> where D: Deserializer
+    //
+    // although it may also be generic over the output types T.
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        //DateTime::parse_from_rfc2822(&s).map_err(serde::de::Error::custom)
+        Utc.datetime_from_str(&s, FORMAT)
+            .map_err(serde::de::Error::custom)
+        //Utc.format(&s, FORMAT).map_err(serde::de::Error::custom)
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct Call {
     pub sid: String,
     pub account_sid: String,
     pub parent_call_sid: Option<String>,
+    #[serde(with = "my_date_format")] pub date_created: DateTime<Utc>,
 }
 
 pub struct Client {
