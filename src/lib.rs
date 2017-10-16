@@ -35,8 +35,6 @@ mod my_date_format {
     use serde::{self, Deserialize, Deserializer, Serializer};
     use chrono::prelude::*;
 
-    const FORMAT: &'static str = "%a, %d %b %Y %T %z";
-
     // The signature of a serialize_with function must follow the pattern:
     //
     //    fn serialize<S>(&T, S) -> Result<S::Ok, S::Error> where S: Serializer
@@ -46,7 +44,7 @@ mod my_date_format {
     where
         S: Serializer,
     {
-        let s = format!("{}", date.format(FORMAT));
+        let s = format!("{}", date.to_rfc2822());
         serializer.serialize_str(&s)
     }
 
@@ -60,10 +58,9 @@ mod my_date_format {
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        //DateTime::parse_from_rfc2822(&s).map_err(serde::de::Error::custom)
-        Utc.datetime_from_str(&s, FORMAT)
+        DateTime::parse_from_rfc2822(&s)
+            .map(|dt| dt.with_timezone(&Utc))
             .map_err(serde::de::Error::custom)
-        //Utc.format(&s, FORMAT).map_err(serde::de::Error::custom)
     }
 }
 
