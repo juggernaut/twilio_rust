@@ -10,6 +10,7 @@ use std::process;
 use std::io::{self, Write};
 use futures::{Future, Stream};
 use twilio_rust::Client;
+use twilio_rust::calls::Calls;
 use tokio_core::reactor::Core;
 use chrono::prelude::*;
 
@@ -39,7 +40,8 @@ fn main() {
 	*/
 	let mut core = Core::new().unwrap();
 	let client = Client::new_from_env(&core.handle()).unwrap();
-	let work = client
+	let calls = Calls::new(&client);
+	let work = calls
 		.get_call("CA166b2ee048446651bfccad9cdba48418")
 		.map(|call| {
 			println!(
