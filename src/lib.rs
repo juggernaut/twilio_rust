@@ -16,7 +16,7 @@ use std::process;
 use std::thread;
 use std::sync::mpsc;
 use std::io::{self, Write};
-use futures::{Future, Stream};
+use futures::{Future, Stream, future};
 use tokio_core::reactor::{Core, Handle, Remote};
 use chrono::prelude::*;
 use hyper::client::{FutureResponse, HttpConnector};
@@ -41,6 +41,12 @@ pub struct Client {
     auth_token: String,
     handle: Handle,
     client: hyper::Client<HttpsConnector<HttpConnector>, Body>,
+}
+
+#[derive(Debug)]
+pub enum TwilioError {
+    Hyper(hyper::error::Error),
+    Serde(serde_json::Error),
 }
 
 impl Client {
@@ -68,5 +74,23 @@ impl Client {
             password: Some(self.auth_token.to_owned()),
         }));
         self.client.request(req)
+    }
+
+    fn get<'de, T>(&self, mut req: Request<Body>) -> Box<Future<Item = T, Error = TwilioError> + 'de>
+    where T: 'de + serde::de::DeserializeOwned
+    {
+        let fut = self.send_request(req)
+            .map_err(|err| TwilioError::Hyper(err))
+            .and_then(|res| {
+                println!("Response: {}", res.status());
+                res.body().concat2().map_err(|err| TwilioError::Hyper(err))
+            })
+            .and_then(move |body| {
+                let debug_str = str::from_utf8(&body).unwrap();
+                println!("DEBUG: body is {}", debug_str);
+                let call_res = serde_json::from_slice(&body).map_err(|err| TwilioError::Serde(err));
+                future::result(call_res)
+            });
+        Box::new(fut)
     }
 }

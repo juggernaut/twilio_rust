@@ -24,8 +24,8 @@ pub struct Call {
 
 #[derive(Debug)]
 pub enum TwilioError {
-    HYPER(hyper::error::Error),
-    SERDE(serde_json::Error),
+    Hyper(hyper::error::Error),
+    Serde(serde_json::Error),
 }
 
 impl<'a> Calls<'a> {
@@ -47,15 +47,15 @@ impl<'a> Calls<'a> {
             .unwrap();
         let mut req: Request<Body> = Request::new(Method::Get, uri);
         let fut = self.client.send_request(req)
-            .map_err(|err| TwilioError::HYPER(err))
+            .map_err(|err| TwilioError::Hyper(err))
             .and_then(|res| {
                 println!("Response: {}", res.status());
-                res.body().concat2().map_err(|err| TwilioError::HYPER(err))
+                res.body().concat2().map_err(|err| TwilioError::Hyper(err))
             })
             .and_then(move |body| {
                 let debug_str = str::from_utf8(&body).unwrap();
                 println!("DEBUG: body is {}", debug_str);
-                let call_res = serde_json::from_slice(&body).map_err(|err| TwilioError::SERDE(err));
+                let call_res = serde_json::from_slice(&body).map_err(|err| TwilioError::Serde(err));
                 future::result(call_res)
             });
         Box::new(fut)
