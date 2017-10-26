@@ -54,8 +54,30 @@ pub struct OutboundCall<'a> {
     fallback_method: Option<CallbackMethod>,
     status_callback: Option<&'a Url>,
     status_callback_method: Option<CallbackMethod>,
-    status_callback_event: Vec<StatusCallbackEvent>,
-    send_digits: &'a str,
+    status_callback_event: &'a [StatusCallbackEvent],
+    send_digits: Option<&'a str>,
+}
+
+impl<'a> OutboundCall<'a> {
+    fn new(from: &'a str, to: &'a str, url: &'a Url) -> OutboundCall<'a> {
+       OutboundCall {
+           from,
+           to,
+           twiml_source: TwimlSource::url(url),
+           method: None,
+           fallback_url: None,
+           fallback_method: None,
+           status_callback: None,
+           status_callback_method: None,
+           status_callback_event: &[],
+           send_digits: None,
+       }
+    }
+
+    fn with_fallback_url(&mut self, fallback_url: &'a Url) -> &mut Self {
+        self.fallback_url = Some(fallback_url);
+        self
+    }
 }
 
 impl<'a> IntoUrlEncoded for OutboundCall<'a> {
