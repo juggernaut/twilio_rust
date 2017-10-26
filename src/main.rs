@@ -4,15 +4,17 @@ extern crate hyper;
 extern crate tokio_core;
 
 extern crate twilio_rust;
+extern crate url;
 
 use std::env;
 use std::process;
 use std::io::{self, Write};
 use futures::{Future, Stream};
 use twilio_rust::Client;
-use twilio_rust::calls::Calls;
+use twilio_rust::calls::{Calls, OutboundCall};
 use tokio_core::reactor::Core;
 use chrono::prelude::*;
+use url::Url;
 
 fn main() {
 	/*
@@ -41,6 +43,7 @@ fn main() {
 	let mut core = Core::new().unwrap();
 	let client = Client::new_from_env(&core.handle()).unwrap();
 	let calls = Calls::new(&client);
+    /*
 	let work = calls
 		.get_call("CA166b2ee048446651bfccad9cdba48418")
 		.map(|call| {
@@ -55,6 +58,9 @@ fn main() {
 			);
 			()
 		});
+		*/
+    let cb_url = Url::parse("https://handler.twilio.com/twiml/EHd118e2828f407106025378a044a91f26").unwrap();
+	let outbound_call = OutboundCall::new("+15103674994", "+19493102155", &cb_url);
+	let work = calls.make_call(&outbound_call);
 	core.run(work).unwrap();
-	println!("This was executed!");
 }

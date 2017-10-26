@@ -59,7 +59,7 @@ pub struct OutboundCall<'a> {
 }
 
 impl<'a> OutboundCall<'a> {
-    fn new(from: &'a str, to: &'a str, url: &'a Url) -> OutboundCall<'a> {
+    pub fn new(from: &'a str, to: &'a str, url: &'a Url) -> OutboundCall<'a> {
        OutboundCall {
            from,
            to,
@@ -129,7 +129,7 @@ impl<'a> Calls<'a> {
     pub fn make_call(&self, outbound_call: &OutboundCall) -> Box<Future<Item = Call, Error = ::TwilioError>> {
         let url_encoded = outbound_call.to_url_encoded();
         let uri = format!(
-            "{}/Accounts/{}/Calls",
+            "{}/Accounts/{}/Calls.json",
             ::BASE_URI,
             self.client.account_sid).parse().unwrap();
         let mut req = Request::new(Method::Post, uri);
