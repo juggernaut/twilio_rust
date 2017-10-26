@@ -8,6 +8,7 @@ use chrono::prelude::*;
 use futures::future;
 use futures::{Future, Stream};
 use hyper::{Body, Method, Request, Uri};
+use hyper::header::{ContentType, ContentLength};
 use hyper::error::Error;
 use url::{form_urlencoded, Url};
 
@@ -100,6 +101,19 @@ impl<'a> Calls<'a> {
         ).parse()
             .unwrap();
         let mut req: Request<Body> = Request::new(Method::Get, uri);
+        self.client.get(req)
+    }
+
+    pub fn make_call(&self, outbound_call: &OutboundCall) -> Box<Future<Item = Call, Error = ::TwilioError>> {
+        let url_encoded = outbound_call.to_url_encoded();
+        let uri = format!(
+            "{}/Accounts/{}/Calls",
+            ::BASE_URI,
+            self.client.account_sid).parse().unwrap();
+        let mut req = Request::new(Method::Post, uri);
+        req.headers_mut().set(ContentType::form_url_encoded());
+        req.headers_mut().set(ContentLength(url_encoded.len() as u64));
+        req.set_body(url_encoded.into_bytes());
         self.client.get(req)
     }
 }
