@@ -3,6 +3,7 @@ extern crate hyper;
 use std::str;
 use ::Client;
 use rfc2822;
+use rfc2822::opt_deserialize;
 use serde_json;
 use chrono::prelude::*;
 use futures::future;
@@ -21,7 +22,8 @@ pub struct Call {
     pub sid: String,
     pub account_sid: String,
     pub parent_call_sid: Option<String>,
-    #[serde(with = "rfc2822")] pub date_created: DateTime<Utc>,
+    //#[serde(with = "rfc2822")] pub date_created: DateTime<Utc>,
+    #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub date_created: Option<DateTime<Utc>>,
 }
 
 pub enum TwimlSource<'a> {

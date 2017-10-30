@@ -1,4 +1,6 @@
 use serde::{self, Deserialize, Deserializer, Serializer};
+use serde_json::{self, Value};
+use serde::de::Error;
 use chrono::prelude::*;
 
 // The signature of a serialize_with function must follow the pattern:
@@ -27,4 +29,19 @@ where
     DateTime::parse_from_rfc2822(&s)
         .map(|dt| dt.with_timezone(&Utc))
         .map_err(serde::de::Error::custom)
+}
+
+pub fn opt_deserialize<'de, D>(deserializer: D) -> Result<Option<DateTime<Utc>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = Value::deserialize(deserializer)?;
+    match value {
+        Value::Null => Ok(None),
+        Value::String(s) => DateTime::parse_from_rfc2822(&s)
+            .map(|dt| dt.with_timezone(&Utc))
+            .map_err(serde::de::Error::custom)
+            .map(|dt| Some(dt)),
+        _ => Err(Error::custom(String::from("something bad happened"))),
+        }
 }
