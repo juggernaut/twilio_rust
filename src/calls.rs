@@ -1,6 +1,7 @@
 extern crate hyper;
 
 use std::str;
+use std::fmt::{Display, Result};
 use ::Client;
 use rfc2822;
 use rfc2822::opt_deserialize;
@@ -80,6 +81,18 @@ pub enum StatusCallbackEvent {
     Completed,
 }
 
+impl StatusCallbackEvent {
+    pub fn name(&self) -> &str {
+        match *self {
+            StatusCallbackEvent::Initiated => "initiated",
+            StatusCallbackEvent::Ringing => "ringing",
+            StatusCallbackEvent::Answered => "answered",
+            StatusCallbackEvent::Completed => "completed",
+        }
+    }
+}
+
+
 pub trait IntoUrlEncoded {
     fn to_url_encoded(&self) -> String;
 }
@@ -117,6 +130,11 @@ impl<'a> OutboundCall<'a> {
         self.fallback_url = Some(fallback_url);
         self
     }
+
+    pub fn set_status_callback_events(&mut self, events: &'a [StatusCallbackEvent]) -> &mut Self {
+        self.status_callback_event = events;
+        self
+    }
 }
 
 impl<'a> IntoUrlEncoded for OutboundCall<'a> {
@@ -129,6 +147,7 @@ impl<'a> IntoUrlEncoded for OutboundCall<'a> {
             TwimlSource::Url(x) => ("Url", x.as_str()),
             TwimlSource::ApplicationSid(x) => ("ApplicationSid", x),
         };
+        encoder.append_pair(name, value);
         if let Some(ref x) = self.method {
             encoder.append_pair("Method", match *x {
                 CallbackMethod::Post => "POST",
@@ -138,7 +157,9 @@ impl<'a> IntoUrlEncoded for OutboundCall<'a> {
         if let Some(url) = self.fallback_url {
             encoder.append_pair("FallbackUrl", url.as_str());
         }
-        encoder.append_pair(name, value);
+        for e in self.status_callback_event.iter() {
+            encoder.append_pair("StatusCallbackEvent", e.name());
+        }
         encoder.finish()
     }
 }
@@ -201,6 +222,17 @@ mod test {
         let outbound_call = OutboundCall::new("tom", "jerry", &url);
         let url_encoded = outbound_call.to_url_encoded();
         assert_eq!("From=tom&To=jerry&Url=http%3A%2F%2Fwww.example.com%2F", &url_encoded);
+    }
+
+    #[test]
+    fn test_status_callback() {
+        let url = Url::parse("http://www.example.com").unwrap();
+        let events = [StatusCallbackEvent::Answered, StatusCallbackEvent::Ringing];
+        let mut outbound_call = OutboundCall::new("tom", "jerry", &url);
+        outbound_call.set_status_callback_events(&events);
+        let url_encoded = outbound_call.to_url_encoded();
+        assert_eq!("From=tom&To=jerry&Url=http%3A%2F%2Fwww.example.com%2F\
+            &StatusCallbackEvent=answered&StatusCallbackEvent=ringing", &url_encoded);
     }
 
 
