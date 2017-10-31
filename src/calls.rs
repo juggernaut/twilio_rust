@@ -113,7 +113,7 @@ impl<'a> OutboundCall<'a> {
        }
     }
 
-    fn with_fallback_url(&mut self, fallback_url: &'a Url) -> &mut Self {
+    pub fn set_fallback_url(&mut self, fallback_url: &'a Url) -> &mut Self {
         self.fallback_url = Some(fallback_url);
         self
     }
@@ -129,16 +129,15 @@ impl<'a> IntoUrlEncoded for OutboundCall<'a> {
             TwimlSource::Url(x) => ("Url", x.as_str()),
             TwimlSource::ApplicationSid(x) => ("ApplicationSid", x),
         };
-        let _ = match self.method {
-            Some(ref x) => {
-                encoder.append_pair("Method", match *x {
-                    CallbackMethod::Post => "POST",
-                    CallbackMethod::Get => "GET",
-                });
-                ()
-            }
-            None => ()
-        };
+        if let Some(ref x) = self.method {
+            encoder.append_pair("Method", match *x {
+                CallbackMethod::Post => "POST",
+                CallbackMethod::Get => "GET",
+            });
+        }
+        if let Some(url) = self.fallback_url {
+            encoder.append_pair("FallbackUrl", url.as_str());
+        }
         encoder.append_pair(name, value);
         encoder.finish()
     }
@@ -194,6 +193,14 @@ mod test {
     #[test]
     fn test_direction_deserialize() {
         assert_eq!(Direction::TrunkingTerminating, serde_json::from_str("\"trunking-terminating\"").unwrap());
+    }
+
+    #[test]
+    fn test_url_encoding() {
+        let url = Url::parse("http://www.example.com").unwrap();
+        let outbound_call = OutboundCall::new("tom", "jerry", &url);
+        let url_encoded = outbound_call.to_url_encoded();
+        assert_eq!("From=tom&To=jerry&Url=http%3A%2F%2Fwww.example.com%2F", &url_encoded);
     }
 
 
