@@ -43,7 +43,6 @@ fn main() {
 	let mut core = Core::new().unwrap();
 	let client = Client::new_from_env(&core.handle()).unwrap();
 	let calls = Calls::new(&client);
-    /*
 	let work = calls
 		.get_call("CA166b2ee048446651bfccad9cdba48418")
 		.map(|call| {
@@ -54,13 +53,14 @@ fn main() {
 					None => "none found",
 					Some(ref x) => x,
 				},
-				call.date_created.weekday()
+                call.date_created.unwrap().weekday()
 			);
 			()
 		});
-		*/
+    /*
     let cb_url = Url::parse("https://handler.twilio.com/twiml/EHd118e2828f407106025378a044a91f26").unwrap();
 	let outbound_call = OutboundCall::new("+15103674994", "+19493102155", &cb_url);
 	let work = calls.make_call(&outbound_call);
+	*/
 	core.run(work).unwrap();
 }

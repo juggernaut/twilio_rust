@@ -27,12 +27,6 @@ use hyper::header::{Authorization, Basic};
 
 pub const BASE_URI: &str = "https://api.twilio.com/2010-04-01";
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {}
-}
-
 pub mod calls;
 mod rfc2822;
 
