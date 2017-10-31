@@ -17,7 +17,7 @@ pub struct Calls<'a> {
     client: &'a Client,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 pub struct Call {
     pub sid: String,
     pub account_sid: String,
@@ -26,6 +26,7 @@ pub struct Call {
     pub to: String,
     pub phone_number_sid: Option<String>,
     pub status: CallStatus,
+    pub duration: Option<u32>,
     //#[serde(with = "rfc2822")] pub date_created: DateTime<Utc>,
     #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub date_created: Option<DateTime<Utc>>,
     #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub date_updated: Option<DateTime<Utc>>,
@@ -42,7 +43,17 @@ pub enum CallStatus {
     Canceled,
     Completed,
     Busy,
-    Failed
+    Failed,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum Direction {
+    Inbound,
+    OutboundApi,
+    OutboundDial,
+    TrunkingTerminating,
+    TrunkingOriginating,
 }
 
 pub enum TwimlSource<'a> {
@@ -168,9 +179,14 @@ mod test {
     use serde_json;
 
     #[test]
-    fn test_enum_deserialize() {
+    fn test_callstatus_deserialize() {
         assert_eq!(CallStatus::Queued, serde_json::from_str("\"queued\"").unwrap());
         assert_eq!(CallStatus::InProgress, serde_json::from_str("\"in-progress\"").unwrap());
+    }
+
+    #[test]
+    fn test_direction_deserialize() {
+        assert_eq!(Direction::TrunkingTerminating, serde_json::from_str("\"trunking-terminating\"").unwrap());
     }
 
 
