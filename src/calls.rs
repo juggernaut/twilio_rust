@@ -22,8 +22,27 @@ pub struct Call {
     pub sid: String,
     pub account_sid: String,
     pub parent_call_sid: Option<String>,
+    pub from: String,
+    pub to: String,
+    pub phone_number_sid: Option<String>,
+    pub status: CallStatus,
     //#[serde(with = "rfc2822")] pub date_created: DateTime<Utc>,
     #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub date_created: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub date_updated: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub start_time: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub end_time: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum CallStatus {
+    Queued,
+    Ringing,
+    #[serde(rename = "in-progress")] InProgress,
+    Canceled,
+    Completed,
+    Busy,
+    Failed
 }
 
 pub enum TwimlSource<'a> {
@@ -140,4 +159,19 @@ impl<'a> Calls<'a> {
         req.set_body(url_encoded.into_bytes());
         self.client.get(req)
     }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+    use serde_json;
+
+    #[test]
+    fn test_enum_deserialize() {
+        assert_eq!(CallStatus::Queued, serde_json::from_str("\"queued\"").unwrap());
+        assert_eq!(CallStatus::InProgress, serde_json::from_str("\"in-progress\"").unwrap());
+    }
+
+
 }
