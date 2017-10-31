@@ -64,20 +64,20 @@ pub enum Direction {
 }
 
 pub enum TwimlSource<'a> {
-    url(&'a Url),
-    application_sid(&'a str),
+    Url(&'a Url),
+    ApplicationSid(&'a str),
 }
 
 pub enum CallbackMethod {
-    post,
-    get,
+    Post,
+    Get,
 }
 
 pub enum StatusCallbackEvent {
-    initiated,
-    ringing,
-    answered,
-    completed,
+    Initiated,
+    Ringing,
+    Answered,
+    Completed,
 }
 
 pub trait IntoUrlEncoded {
@@ -102,7 +102,7 @@ impl<'a> OutboundCall<'a> {
        OutboundCall {
            from,
            to,
-           twiml_source: TwimlSource::url(url),
+           twiml_source: TwimlSource::Url(url),
            method: None,
            fallback_url: None,
            fallback_method: None,
@@ -126,14 +126,14 @@ impl<'a> IntoUrlEncoded for OutboundCall<'a> {
         encoder.append_pair("From", self.from);
         encoder.append_pair("To", self.to);
         let (name, value) = match self.twiml_source {
-            TwimlSource::url(x) => ("Url", x.as_str()),
-            TwimlSource::application_sid(x) => ("ApplicationSid", x),
+            TwimlSource::Url(x) => ("Url", x.as_str()),
+            TwimlSource::ApplicationSid(x) => ("ApplicationSid", x),
         };
         let _ = match self.method {
             Some(ref x) => {
                 encoder.append_pair("Method", match *x {
-                    CallbackMethod::post => "POST",
-                    CallbackMethod::get => "GET",
+                    CallbackMethod::Post => "POST",
+                    CallbackMethod::Get => "GET",
                 });
                 ()
             }
