@@ -74,6 +74,15 @@ pub enum CallbackMethod {
     Get,
 }
 
+impl CallbackMethod {
+    pub fn name(&self) -> &str {
+        match *self {
+            CallbackMethod::Post => "POST",
+            CallbackMethod::Get => "GET",
+        }
+    }
+}
+
 pub enum StatusCallbackEvent {
     Initiated,
     Ringing,
@@ -92,6 +101,11 @@ impl StatusCallbackEvent {
     }
 }
 
+pub enum RecordingChannel {
+    Mono,
+    Dual,
+}
+
 
 pub trait IntoUrlEncoded {
     fn to_url_encoded(&self) -> String;
@@ -108,6 +122,11 @@ pub struct OutboundCall<'a> {
     status_callback_method: Option<CallbackMethod>,
     status_callback_event: &'a [StatusCallbackEvent],
     send_digits: Option<&'a str>,
+    timeout: Option<u32>,
+    record: Option<bool>,
+    recording_channels: Option<RecordingChannel>,
+    recording_status_callback: Option<&'a Url>,
+    recording_status_callback_method: Option<CallbackMethod>,
 }
 
 impl<'a> OutboundCall<'a> {
@@ -123,11 +142,31 @@ impl<'a> OutboundCall<'a> {
            status_callback_method: None,
            status_callback_event: &[],
            send_digits: None,
+           timeout: None,
+           record: None,
+           recording_channels: None,
+           recording_status_callback: None,
+           recording_status_callback_method: None,
        }
+    }
+
+    pub fn set_method(&mut self, method: CallbackMethod) -> &mut Self {
+        self.method = Some(method);
+        self
     }
 
     pub fn set_fallback_url(&mut self, fallback_url: &'a Url) -> &mut Self {
         self.fallback_url = Some(fallback_url);
+        self
+    }
+
+    pub fn set_fallback_method(&mut self, fallback_method: CallbackMethod) -> &mut Self {
+        self.fallback_method = Some(fallback_method);
+        self
+    }
+
+    pub fn set_status_callback(&mut self, status_callback: &'a Url) -> &mut Self {
+        self.status_callback = Some(status_callback);
         self
     }
 
@@ -149,16 +188,28 @@ impl<'a> IntoUrlEncoded for OutboundCall<'a> {
         };
         encoder.append_pair(name, value);
         if let Some(ref x) = self.method {
-            encoder.append_pair("Method", match *x {
-                CallbackMethod::Post => "POST",
-                CallbackMethod::Get => "GET",
-            });
+            encoder.append_pair("Method", x.name());
         }
+
         if let Some(url) = self.fallback_url {
             encoder.append_pair("FallbackUrl", url.as_str());
         }
+        if let Some(ref x) = self.fallback_method {
+            encoder.append_pair("FallbackMethod", x.name());
+        }
+
+        if let Some(url) = self.status_callback {
+            encoder.append_pair("StatusCallback", url.as_str());
+        }
+        if let Some(ref x) = self.status_callback_method {
+            encoder.append_pair("StatusCallbackMethod", x.name());
+        }
         for e in self.status_callback_event.iter() {
             encoder.append_pair("StatusCallbackEvent", e.name());
+        }
+
+        if let Some(digits) = self.send_digits {
+            encoder.append_pair("SendDigits", digits);
         }
         encoder.finish()
     }
