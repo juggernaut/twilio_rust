@@ -64,11 +64,13 @@ pub enum Direction {
     TrunkingOriginating,
 }
 
+#[derive(Copy, Clone)]
 pub enum TwimlSource<'a> {
     Url(&'a Url),
     ApplicationSid(&'a str),
 }
 
+#[derive(Copy, Clone)]
 pub enum CallbackMethod {
     Post,
     Get,
@@ -101,6 +103,7 @@ impl StatusCallbackEvent {
     }
 }
 
+#[derive(Copy, Clone)]
 pub enum RecordingChannel {
     Mono,
     Dual,
@@ -129,9 +132,27 @@ pub struct OutboundCall<'a> {
     recording_status_callback_method: Option<CallbackMethod>,
 }
 
-impl<'a> OutboundCall<'a> {
-    pub fn new(from: &'a str, to: &'a str, url: &'a Url) -> OutboundCall<'a> {
-       OutboundCall {
+pub struct OutboundCallBuilder<'a> {
+    from: &'a str,
+    to: &'a str,
+    twiml_source: TwimlSource<'a>,
+    method: Option<CallbackMethod>,
+    fallback_url: Option<&'a Url>,
+    fallback_method: Option<CallbackMethod>,
+    status_callback: Option<&'a Url>,
+    status_callback_method: Option<CallbackMethod>,
+    status_callback_event: &'a [StatusCallbackEvent],
+    send_digits: Option<&'a str>,
+    timeout: Option<u32>,
+    record: Option<bool>,
+    recording_channels: Option<RecordingChannel>,
+    recording_status_callback: Option<&'a Url>,
+    recording_status_callback_method: Option<CallbackMethod>,
+}
+
+impl<'a> OutboundCallBuilder<'a> {
+    pub fn new(from: &'a str, to: &'a str, url: &'a Url) -> OutboundCallBuilder<'a> {
+       OutboundCallBuilder {
            from,
            to,
            twiml_source: TwimlSource::Url(url),
@@ -150,29 +171,49 @@ impl<'a> OutboundCall<'a> {
        }
     }
 
-    pub fn set_method(&mut self, method: CallbackMethod) -> &mut Self {
+    pub fn with_method(&mut self, method: CallbackMethod) -> &mut Self {
         self.method = Some(method);
         self
     }
 
-    pub fn set_fallback_url(&mut self, fallback_url: &'a Url) -> &mut Self {
+    pub fn with_fallback_url(&mut self, fallback_url: &'a Url) -> &mut Self {
         self.fallback_url = Some(fallback_url);
         self
     }
 
-    pub fn set_fallback_method(&mut self, fallback_method: CallbackMethod) -> &mut Self {
+    pub fn with_fallback_method(&mut self, fallback_method: CallbackMethod) -> &mut Self {
         self.fallback_method = Some(fallback_method);
         self
     }
 
-    pub fn set_status_callback(&mut self, status_callback: &'a Url) -> &mut Self {
+    pub fn with_status_callback(&mut self, status_callback: &'a Url) -> &mut Self {
         self.status_callback = Some(status_callback);
         self
     }
 
-    pub fn set_status_callback_events(&mut self, events: &'a [StatusCallbackEvent]) -> &mut Self {
+    pub fn with_status_callback_events(&mut self, events: &'a [StatusCallbackEvent]) -> &mut Self {
         self.status_callback_event = events;
         self
+    }
+
+    pub fn build(&mut self) -> OutboundCall<'a> {
+        OutboundCall {
+            from: self.from,
+            to: self.to,
+            twiml_source: self.twiml_source,
+            method: self.method,
+            fallback_url: self.fallback_url,
+            fallback_method: self.fallback_method,
+            status_callback: self.status_callback,
+            status_callback_method: self.status_callback_method,
+            status_callback_event: self.status_callback_event,
+            send_digits: self.send_digits,
+            timeout: self.timeout,
+            record: self.record,
+            recording_channels: self.recording_channels,
+            recording_status_callback: self.recording_status_callback,
+            recording_status_callback_method: self.recording_status_callback_method,
+        }
     }
 }
 
