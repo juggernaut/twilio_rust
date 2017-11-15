@@ -65,7 +65,7 @@ fn main() {
         .build();
 	let work = calls.make_call(&outbound_call);
 	*/
-    let work = calls.get_calls()
+    let work = calls.get_calls_with_page_size(5)
         .map(|page| {
             for call in page.items.iter() {
                 println!("Call sid is {}", call.sid);

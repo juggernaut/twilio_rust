@@ -46,7 +46,6 @@ pub enum TwilioError {
     BadResponse,
 }
 
-#[derive(Deserialize)]
 pub struct Page<T> {
     pub items: Vec<T>,
     pub page_size: u16,
