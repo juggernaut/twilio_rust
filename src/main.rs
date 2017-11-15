@@ -10,7 +10,7 @@ use std::env;
 use std::process;
 use std::io::{self, Write};
 use futures::{Future, Stream};
-use twilio_rust::Client;
+use twilio_rust::{Client, Page};
 use twilio_rust::calls::{Calls, OutboundCall, OutboundCallBuilder};
 use tokio_core::reactor::Core;
 use chrono::prelude::*;
@@ -58,12 +58,19 @@ fn main() {
 			);
 			()
 		});
-		*/
     let cb_url = Url::parse("https://handler.twilio.com/twiml/EHd118e2828f407106025378a044a91f26").unwrap();
     let fallback_url = Url::parse("https://www.example.com").unwrap();
 	let outbound_call = OutboundCallBuilder::new("+15103674994", "+19493102155", &cb_url)
         .with_fallback_url(&fallback_url)
         .build();
 	let work = calls.make_call(&outbound_call);
+	*/
+    let work = calls.get_calls()
+        .map(|page| {
+            for call in page.items.iter() {
+                println!("Call sid is {}", call.sid);
+            }
+            ()
+        });
 	core.run(work).unwrap();
 }

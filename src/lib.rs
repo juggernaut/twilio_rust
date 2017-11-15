@@ -48,8 +48,8 @@ pub enum TwilioError {
 
 #[derive(Deserialize)]
 pub struct Page<T> {
-    items: Vec<T>,
-    page_size: u16,
+    pub items: Vec<T>,
+    pub page_size: u16,
 }
 
 impl Client {
@@ -110,20 +110,19 @@ impl Client {
                 let call_res: Result<Value, TwilioError> = serde_json::from_slice(&body)
                     .map_err(|err| TwilioError::Serde(err));
                 let final_res = call_res.and_then(move|v| {
-                    if let Some(calls) = v.as_array() {
-                        let des_calls: Vec<calls::Call> = calls.to_owned().into_iter().map(move|c| {
-                            let call: calls::Call = serde_json::from_value(c).unwrap(); // XXX: figure out if we should quit even if a single result is bad
-                            call
-                        }).collect();
-                        let page = Page {
-                            items: des_calls,
-                            page_size: 50,
-                        };
-                        return Ok(page);
-
-                    } else {
-                        return Err(TwilioError::BadResponse);
-                    }
+                    v.get("calls")
+                        .ok_or(TwilioError::BadResponse)
+                        .and_then(move |v| v.as_array().ok_or(TwilioError::BadResponse))
+                        .map(move|calls| {
+                            let des_calls: Vec<calls::Call> = calls.to_owned().into_iter().map(move|c| {
+                                let call: calls::Call = serde_json::from_value(c).unwrap(); // XXX: figure out if we should quit even if a single result is bad
+                                call
+                            }).collect();
+                            Page {
+                                items: des_calls,
+                                page_size: 50,
+                            }
+                        })
                 });
                 future::result(final_res)
             });

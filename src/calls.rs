@@ -317,6 +317,15 @@ impl<'a> Calls<'a> {
         req.set_body(url_encoded.into_bytes());
         self.client.get(req)
     }
+
+    pub fn get_calls(&self) -> Box<Future<Item = ::Page<Call>, Error = ::TwilioError>> {
+        let uri = format!(
+            "{}/Accounts/{}/Calls.json",
+            ::BASE_URI,
+            self.client.account_sid).parse().unwrap();
+        let mut req = Request::new(Method::Get, uri);
+        self.client.get_page(req)
+    }
 }
 
 #[cfg(test)]
