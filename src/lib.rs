@@ -10,6 +10,7 @@ extern crate tokio_core;
 extern crate url;
 
 use std::str;
+use std::str::FromStr;
 use std::option::Option;
 use std::env;
 use std::error::Error;
@@ -22,9 +23,9 @@ use tokio_core::reactor::{Core, Handle, Remote};
 use chrono::prelude::*;
 use hyper::client::{FutureResponse, HttpConnector};
 use hyper_tls::HttpsConnector;
-use hyper::{Body, Method, Request};
+use hyper::{Body, Method, Request, Uri};
 use hyper::header::{Authorization, Basic};
-use serde_json::Value;
+use serde_json::value::Value;
 
 pub const BASE_URI: &str = "https://api.twilio.com/2010-04-01";
 
@@ -48,7 +49,7 @@ pub enum TwilioError {
 
 pub struct Page<T> {
     pub items: Vec<T>,
-    pub page_size: u16,
+    pub next_page_uri: Option<Uri>,
 }
 
 impl Client {
@@ -109,6 +110,10 @@ impl Client {
                 let call_res: Result<Value, TwilioError> = serde_json::from_slice(&body)
                     .map_err(|err| TwilioError::Serde(err));
                 let final_res = call_res.and_then(move|v| {
+                    let next_page_uri = match v["next_page_uri"] {
+                        Value::String(ref uri) => Uri::from_str(uri).ok(),
+                        _ => None,
+                    };
                     v.get("calls")
                         .ok_or(TwilioError::BadResponse)
                         .and_then(move |v| v.as_array().ok_or(TwilioError::BadResponse))
@@ -119,7 +124,7 @@ impl Client {
                             }).collect();
                             Page {
                                 items: des_calls,
-                                page_size: 50,
+                                next_page_uri,
                             }
                         })
                 });

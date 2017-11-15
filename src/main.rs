@@ -70,6 +70,7 @@ fn main() {
             for call in page.items.iter() {
                 println!("Call sid is {}", call.sid);
             }
+            //calls.get_next_page(&page)
             ()
         });
 	core.run(work).unwrap();

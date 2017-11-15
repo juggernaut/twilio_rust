@@ -42,15 +42,6 @@ pub struct Call {
     #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub end_time: Option<DateTime<Utc>>,
 }
 
-/*
-#[derive(Deserialize)]
-pub struct CallsList {
-    page_size: u16,
-    next_page_uri: Url,
-    calls: Vec<Call>,
-}
-*/
-
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum CallStatus {
@@ -265,25 +256,6 @@ impl<'a> IntoUrlEncoded for OutboundCall<'a> {
     }
 }
 
-struct CallsIter<'a> {
-    client: &'a Client,
-    next_page_uri: Option<&'a Url>,
-    counter: u16,
-}
-
-
-/*
-impl<'a> Iterator for CallsIter<'a> {
-
-    type Item = Future<Item = Page<Call>, Error = TwilioError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let mut req = Request::new(Method::Get, self.next_page_uri.unwrap());
-
-    }
-}
-*/
-
 impl<'a> Calls<'a> {
 
     pub fn new(client: &Client) -> Calls {
@@ -334,6 +306,13 @@ impl<'a> Calls<'a> {
             self.client.account_sid, page_size).parse().unwrap();
         let mut req = Request::new(Method::Get, uri);
         self.client.get_page(req)
+    }
+
+    pub fn get_next_page(&self, page: &::Page<Call>) -> Option<Box<Future<Item = ::Page<Call>, Error = ::TwilioError>>> {
+        page.next_page_uri.as_ref().map(|uri| {
+            let mut req = Request::new(Method::Get, uri.clone());
+            self.client.get_page(req)
+        })
     }
 }
 
