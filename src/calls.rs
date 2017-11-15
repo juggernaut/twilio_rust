@@ -42,6 +42,15 @@ pub struct Call {
     #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub end_time: Option<DateTime<Utc>>,
 }
 
+/*
+#[derive(Deserialize)]
+pub struct CallsList {
+    page_size: u16,
+    next_page_uri: Url,
+    calls: Vec<Call>,
+}
+*/
+
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum CallStatus {
@@ -255,6 +264,25 @@ impl<'a> IntoUrlEncoded for OutboundCall<'a> {
         encoder.finish()
     }
 }
+
+struct CallsIter<'a> {
+    client: &'a Client,
+    next_page_uri: Option<&'a Url>,
+    counter: u16,
+}
+
+
+/*
+impl<'a> Iterator for CallsIter<'a> {
+
+    type Item = Future<Item = Page<Call>, Error = TwilioError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut req = Request::new(Method::Get, self.next_page_uri.unwrap());
+
+    }
+}
+*/
 
 impl<'a> Calls<'a> {
 
