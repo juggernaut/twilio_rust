@@ -10,6 +10,7 @@ use std::env;
 use std::process;
 use std::io::{self, Write};
 use futures::{Future, Stream};
+use futures::future;
 use twilio_rust::{Client, Page};
 use twilio_rust::calls::{Calls, OutboundCall, OutboundCallBuilder};
 use tokio_core::reactor::Core;
@@ -66,11 +67,18 @@ fn main() {
 	let work = calls.make_call(&outbound_call);
 	*/
     let work = calls.get_calls_with_page_size(5)
-        .map(|page| {
+        .and_then(|page| {
             for call in page.items.iter() {
                 println!("Call sid is {}", call.sid);
             }
-            //calls.get_next_page(&page)
+            calls.get_next_page(&page)
+        })
+        .map(|opt_page| {
+            if let Some(page) = opt_page {
+                for call in page.items.iter() {
+                    println!("Call sid is {}", call.sid);
+                }
+            }
             ()
         });
 	core.run(work).unwrap();

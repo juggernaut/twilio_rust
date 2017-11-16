@@ -27,7 +27,7 @@ use hyper::{Body, Method, Request, Uri};
 use hyper::header::{Authorization, Basic};
 use serde_json::value::Value;
 
-pub const BASE_URI: &str = "https://api.twilio.com/2010-04-01";
+pub const BASE_URI: &str = "https://api.twilio.com";
 
 pub mod calls;
 mod rfc2822;
@@ -111,7 +111,7 @@ impl Client {
                     .map_err(|err| TwilioError::Serde(err));
                 let final_res = call_res.and_then(move|v| {
                     let next_page_uri = match v["next_page_uri"] {
-                        Value::String(ref uri) => Uri::from_str(uri).ok(),
+                        Value::String(ref uri) => Uri::from_str(&format!("{}{}", BASE_URI, uri)).ok(),
                         _ => None,
                     };
                     v.get("calls")

@@ -267,7 +267,7 @@ impl<'a> Calls<'a> {
         call_sid: &str,
     ) -> Box<Future<Item = Call, Error = ::TwilioError>> {
         let uri = format!(
-            "{}/Accounts/{}/Calls/{}.json",
+            "{}/2010-04-01/Accounts/{}/Calls/{}.json",
             ::BASE_URI,
             self.client.account_sid,
             call_sid
@@ -280,7 +280,7 @@ impl<'a> Calls<'a> {
     pub fn make_call(&self, outbound_call: &OutboundCall) -> Box<Future<Item = Call, Error = ::TwilioError>> {
         let url_encoded = outbound_call.to_url_encoded();
         let uri = format!(
-            "{}/Accounts/{}/Calls.json",
+            "{}/2010-04-01/Accounts/{}/Calls.json",
             ::BASE_URI,
             self.client.account_sid).parse().unwrap();
         let mut req = Request::new(Method::Post, uri);
@@ -292,7 +292,7 @@ impl<'a> Calls<'a> {
 
     pub fn get_calls(&self) -> Box<Future<Item = ::Page<Call>, Error = ::TwilioError>> {
         let uri = format!(
-            "{}/Accounts/{}/Calls.json",
+            "{}/2010-04-01/Accounts/{}/Calls.json",
             ::BASE_URI,
             self.client.account_sid).parse().unwrap();
         let mut req = Request::new(Method::Get, uri);
@@ -301,18 +301,21 @@ impl<'a> Calls<'a> {
 
     pub fn get_calls_with_page_size(&self, page_size: u16) -> Box<Future<Item = ::Page<Call>, Error = ::TwilioError>> {
         let uri = format!(
-            "{}/Accounts/{}/Calls.json?PageSize={}",
+            "{}/2010-04-01/Accounts/{}/Calls.json?PageSize={}",
             ::BASE_URI,
             self.client.account_sid, page_size).parse().unwrap();
         let mut req = Request::new(Method::Get, uri);
         self.client.get_page(req)
     }
 
-    pub fn get_next_page(&self, page: &::Page<Call>) -> Option<Box<Future<Item = ::Page<Call>, Error = ::TwilioError>>> {
-        page.next_page_uri.as_ref().map(|uri| {
-            let mut req = Request::new(Method::Get, uri.clone());
-            self.client.get_page(req)
-        })
+    pub fn get_next_page(&self, page: &::Page<Call>) -> Box<Future<Item = Option<::Page<Call>>, Error = ::TwilioError>> {
+        match page.next_page_uri.as_ref() {
+            Some(uri) => {
+                let mut req = Request::new(Method::Get, uri.clone());
+                Box::new(self.client.get_page(req).map(|p| Some(p)))
+            },
+            None => Box::new(future::ok(None))
+        }
     }
 }
 
