@@ -109,8 +109,17 @@ pub enum RecordingChannel {
     Dual,
 }
 
+impl RecordingChannel {
+    pub fn name(&self) -> &str {
+        match *self {
+            RecordingChannel::Mono => "mono",
+            RecordingChannel::Dual => "dual",
+        }
+    }
+}
 
-pub trait IntoUrlEncoded {
+
+pub trait ToUrlEncoded {
     fn to_url_encoded(&self) -> String;
 }
 
@@ -196,6 +205,36 @@ impl<'a> OutboundCallBuilder<'a> {
         self
     }
 
+    pub fn with_send_digits(&mut self, digits: &'a str) -> &mut Self {
+        self.send_digits = Some(digits);
+        self
+    }
+
+    pub fn with_timeout(&mut self, timeout: u32) -> &mut Self {
+        self.timeout = Some(timeout);
+        self
+    }
+
+    pub fn with_record(&mut self, record: bool) -> &mut Self {
+        self.record = Some(record);
+        self
+    }
+
+    pub fn with_recording_channels(&mut self, recording_channels: RecordingChannel) -> &mut Self {
+        self.recording_channels = Some(recording_channels);
+        self
+    }
+
+    pub fn with_recording_status_callback(&mut self, url: &'a Url) -> &mut Self {
+        self.recording_status_callback = Some(url);
+        self
+    }
+
+    pub fn with_recording_status_callback_method(&mut self, method: CallbackMethod) -> &mut Self {
+        self.recording_status_callback_method = Some(method);
+        self
+    }
+
     pub fn build(&mut self) -> OutboundCall<'a> {
         OutboundCall {
             from: self.from,
@@ -217,7 +256,7 @@ impl<'a> OutboundCallBuilder<'a> {
     }
 }
 
-impl<'a> IntoUrlEncoded for OutboundCall<'a> {
+impl<'a> ToUrlEncoded for OutboundCall<'a> {
 
     fn to_url_encoded(&self) -> String {
         let mut encoder = form_urlencoded::Serializer::new(String::new());
@@ -251,6 +290,21 @@ impl<'a> IntoUrlEncoded for OutboundCall<'a> {
 
         if let Some(digits) = self.send_digits {
             encoder.append_pair("SendDigits", digits);
+        }
+        if let Some(timeout) = self.timeout {
+            encoder.append_pair("Timeout", &timeout.to_string());
+        }
+        if let Some(record) = self.record {
+            encoder.append_pair("Record", &record.to_string());
+        }
+        if let Some(recording_channel) = self.recording_channels {
+            encoder.append_pair("RecordingChannels", recording_channel.name());
+        }
+        if let Some(recording_status_callback) = self.recording_status_callback {
+            encoder.append_pair("RecordingStatusCallback", recording_status_callback.as_str());
+        }
+        if let Some(recording_status_callback_method) = self.recording_status_callback_method {
+            encoder.append_pair("RecordingStatusCallbackMethod", recording_status_callback_method.name());
         }
         encoder.finish()
     }
