@@ -118,6 +118,21 @@ impl RecordingChannel {
     }
 }
 
+#[derive(Copy, Clone)]
+pub enum ModifyCallStatus {
+    Canceled,
+    Completed,
+}
+
+impl ModifyCallStatus {
+    pub fn name(&self) -> &str {
+        match *self {
+            ModifyCallStatus::Canceled => "canceled",
+            ModifyCallStatus::Completed => "completed",
+        }
+    }
+}
+
 
 pub trait ToUrlEncoded {
     fn to_url_encoded(&self) -> String;
@@ -370,6 +385,29 @@ impl<'a> Calls<'a> {
             },
             None => Box::new(future::ok(None))
         }
+    }
+
+    pub fn redirect_call(&self, call_sid: &str, redirect_url: &Url,
+                         redirect_method: Option<CallbackMethod>) -> Box<Future<Item = Call, Error = ::TwilioError>> {
+
+        let mut encoder = form_urlencoded::Serializer::new(String::new());
+        encoder.append_pair("Url", redirect_url.as_str());
+        if let Some(method) = redirect_method {
+            encoder.append_pair("Method", method.name());
+        }
+        let params: String = encoder.finish();
+        let uri = format!(
+            "{}/2010-04-01/Accounts/{}/Calls/{}.json",
+            ::BASE_URI,
+            self.client.account_sid,
+            call_sid
+        ).parse()
+            .unwrap();
+        let mut req = Request::new(Method::Post, uri);
+        req.headers_mut().set(ContentType::form_url_encoded());
+        req.headers_mut().set(ContentLength(params.len() as u64));
+        req.set_body(params.into_bytes());
+        self.client.get(req)
     }
 }
 

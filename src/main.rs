@@ -6,13 +6,13 @@ extern crate tokio_core;
 extern crate twilio_rust;
 extern crate url;
 
-use std::env;
+use std::{env, thread, time};
 use std::process;
 use std::io::{self, Write};
 use futures::{Future, Stream};
 use futures::future;
 use twilio_rust::{Client, Page};
-use twilio_rust::calls::{Calls, OutboundCall, OutboundCallBuilder};
+use twilio_rust::calls::{Calls, OutboundCall, OutboundCallBuilder, CallbackMethod};
 use tokio_core::reactor::Core;
 use chrono::prelude::*;
 use url::Url;
@@ -59,13 +59,15 @@ fn main() {
 			);
 			()
 		});
+	*/
     let cb_url = Url::parse("https://handler.twilio.com/twiml/EHd118e2828f407106025378a044a91f26").unwrap();
     let fallback_url = Url::parse("https://www.example.com").unwrap();
 	let outbound_call = OutboundCallBuilder::new("+15103674994", "+19493102155", &cb_url)
         .with_fallback_url(&fallback_url)
         .build();
 	let work = calls.make_call(&outbound_call);
-	*/
+
+    /*
     let work = calls.get_calls_with_page_size(5)
         .and_then(|page| {
             for call in page.items.iter() {
@@ -81,5 +83,15 @@ fn main() {
             }
             ()
         });
-	core.run(work).unwrap();
+    */
+	let queued_call = core.run(work).unwrap();
+
+    thread::sleep(time::Duration::from_secs(15));
+
+    let redirect_url = Url::parse("https://handler.twilio.com/twiml/EH09759ae9d76da9df9ce95c3a91fd3b73").unwrap();
+    let work = calls.redirect_call(&queued_call.sid, &redirect_url, Some(CallbackMethod::Post));
+
+    core.run(work).unwrap();
+
+
 }
