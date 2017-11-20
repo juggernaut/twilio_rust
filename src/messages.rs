@@ -3,6 +3,9 @@ extern crate hyper;
 use serde_json;
 use ::Client;
 use url::{form_urlencoded, Url};
+use chrono::prelude::*;
+use rfc2822;
+use rfc2822::opt_deserialize;
 
 pub struct Messages<'a> {
     client: &'a Client,
@@ -51,11 +54,13 @@ pub struct Message {
     #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub date_sent: Option<DateTime<Utc>>,
 }
 
+#[derive(Copy, Clone)]
 pub enum MessageBody<'a> {
     SMS(&'a str),
     MMS(&'a Url),
 }
 
+#[derive(Copy, Clone)]
 pub enum MessageFrom<'a> {
     From(&'a str),
     MessagingServiceSid(&'a str),
@@ -84,7 +89,7 @@ pub struct OutboundMessageBuilder<'a> {
 }
 
 impl<'a> OutboundMessageBuilder<'a> {
-    pub fn new_sms(from: MessageFrom<'a>, to: &'a str, body: &'a str) -> &mut Self {
+    pub fn new_sms(from: MessageFrom<'a>, to: &'a str, body: &'a str) -> OutboundMessageBuilder<'a> {
         OutboundMessageBuilder {
             from,
             to,
@@ -97,7 +102,7 @@ impl<'a> OutboundMessageBuilder<'a> {
         }
     }
 
-    pub fn new_mms(from: MessageFrom<'a>, to: &'a str, body: &'a Url) -> &mut Self {
+    pub fn new_mms(from: MessageFrom<'a>, to: &'a str, body: &'a Url) -> OutboundMessageBuilder<'a> {
         OutboundMessageBuilder {
             from,
             to,
@@ -147,4 +152,17 @@ impl<'a> OutboundMessageBuilder<'a> {
             validity_period: self.validity_period,
         }
     }
+}
+
+impl<'a> Messages<'a> {
+
+    pub fn new(client: &'a Client) -> Messages {
+        Messages { client }
+    }
+
+    /*
+    pub fn send_message(message: &'a OutboundMessage) -> Box<Future<Item = Message, Error = ::TwilioError>> {
+
+    }
+    */
 }

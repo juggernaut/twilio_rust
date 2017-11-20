@@ -30,6 +30,7 @@ use serde_json::value::Value;
 pub const BASE_URI: &str = "https://api.twilio.com";
 
 pub mod calls;
+pub mod messages;
 mod rfc2822;
 
 
