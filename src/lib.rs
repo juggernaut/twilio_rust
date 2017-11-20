@@ -23,7 +23,7 @@ use tokio_core::reactor::{Core, Handle, Remote};
 use chrono::prelude::*;
 use hyper::client::{FutureResponse, HttpConnector};
 use hyper_tls::HttpsConnector;
-use hyper::{Body, Method, Request, Uri};
+use hyper::{Body, Method, Request, Uri, StatusCode};
 use hyper::header::{Authorization, Basic};
 use serde_json::value::Value;
 
@@ -44,7 +44,8 @@ pub struct Client {
 pub enum TwilioError {
     Hyper(hyper::error::Error),
     Serde(serde_json::Error),
-    BadResponse,
+    BadResponse(hyper::Response),
+    MalformedResponse,
 }
 
 pub struct Page<T> {
@@ -86,6 +87,13 @@ impl Client {
             .map_err(|err| TwilioError::Hyper(err))
             .and_then(|res| {
                 println!("Response: {}", res.status());
+                match res.status() {
+                    StatusCode::Ok | StatusCode::Created => future::ok(res),
+                        //success_result = res.body().concat2().map_err(|err| TwilioError::Hyper(err))
+                    _  => future::err(TwilioError::BadResponse(res))
+                }
+            })
+            .and_then(|res| {
                 res.body().concat2().map_err(|err| TwilioError::Hyper(err))
             })
             .and_then(move |body| {
@@ -115,8 +123,8 @@ impl Client {
                         _ => None,
                     };
                     v.get("calls")
-                        .ok_or(TwilioError::BadResponse)
-                        .and_then(move |v| v.as_array().ok_or(TwilioError::BadResponse))
+                        .ok_or(TwilioError::MalformedResponse)
+                        .and_then(move |v| v.as_array().ok_or(TwilioError::MalformedResponse))
                         .map(move|calls| {
                             let des_calls: Vec<calls::Call> = calls.to_owned().into_iter().map(move|c| {
                                 let call: calls::Call = serde_json::from_value(c).unwrap(); // XXX: figure out if we should quit even if a single result is bad
