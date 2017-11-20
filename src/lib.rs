@@ -81,7 +81,7 @@ impl Client {
         self.client.request(req)
     }
 
-    fn get<'de, T>(&self, mut req: Request<Body>) -> Box<Future<Item = T, Error = TwilioError> + 'de>
+    fn make_req<'de, T>(&self, mut req: Request<Body>) -> Box<Future<Item = T, Error = TwilioError> + 'de>
     where T: 'de + serde::de::DeserializeOwned
     {
         let fut = self.send_request(req)

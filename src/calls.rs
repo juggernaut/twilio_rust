@@ -343,7 +343,7 @@ impl<'a> Calls<'a> {
         ).parse()
             .unwrap();
         let mut req: Request<Body> = Request::new(Method::Get, uri);
-        self.client.get(req)
+        self.client.make_req(req)
     }
 
     pub fn make_call(&self, outbound_call: &OutboundCall) -> Box<Future<Item = Call, Error = ::TwilioError>> {
@@ -356,7 +356,7 @@ impl<'a> Calls<'a> {
         req.headers_mut().set(ContentType::form_url_encoded());
         req.headers_mut().set(ContentLength(url_encoded.len() as u64));
         req.set_body(url_encoded.into_bytes());
-        self.client.get(req)
+        self.client.make_req(req)
     }
 
     pub fn get_calls(&self) -> Box<Future<Item = ::Page<Call>, Error = ::TwilioError>> {
@@ -407,7 +407,7 @@ impl<'a> Calls<'a> {
         req.headers_mut().set(ContentType::form_url_encoded());
         req.headers_mut().set(ContentLength(params.len() as u64));
         req.set_body(params.into_bytes());
-        self.client.get(req)
+        self.client.make_req(req)
     }
 }
 
