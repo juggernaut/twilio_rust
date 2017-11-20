@@ -89,8 +89,7 @@ impl Client {
                 println!("Response: {}", res.status());
                 match res.status() {
                     StatusCode::Ok | StatusCode::Created => future::ok(res),
-                        //success_result = res.body().concat2().map_err(|err| TwilioError::Hyper(err))
-                    _  => future::err(TwilioError::BadResponse(res))
+                    _  => future::err(TwilioError::BadResponse(res)),
                 }
             })
             .and_then(|res| {
