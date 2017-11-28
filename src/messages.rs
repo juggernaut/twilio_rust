@@ -1,11 +1,12 @@
 extern crate hyper;
 
 use serde_json;
-use ::Client;
+use ::{Client, ToUrlEncoded};
 use url::{form_urlencoded, Url};
 use chrono::prelude::*;
 use rfc2822;
 use rfc2822::opt_deserialize;
+use futures::{Future, future};
 
 pub struct Messages<'a> {
     client: &'a Client,
@@ -154,6 +155,51 @@ impl<'a> OutboundMessageBuilder<'a> {
     }
 }
 
+impl<'a> ToUrlEncoded for OutboundMessage<'a> {
+
+    fn to_url_encoded(&self) -> String {
+        let mut encoder = form_urlencoded::Serializer::new(String::new());
+        encoder.append_pair("To", self.to);
+
+        let (name, value) = match self.from {
+            MessageFrom::From(x) => ("From", x),
+            MessageFrom::MessagingServiceSid(x) => ("MessagingServiceSid", x),
+        };
+
+        encoder.append_pair(name, value);
+
+        let (name, value) = match self.body {
+            MessageBody::SMS(x) => ("Body", x),
+            MessageBody::MMS(x) => ("MediaUrl", x.as_str()),
+        };
+
+        encoder.append_pair(name, value);
+
+        if let Some(url) = self.status_callback {
+            encoder.append_pair("StatusCallback", url.as_str());
+        }
+
+        if let Some(application_sid) = self.application_sid {
+            encoder.append_pair("ApplicationSid", application_sid);
+        }
+
+        if let Some(max_price) = self.max_price {
+            encoder.append_pair("MaxPrice", max_price);
+        }
+
+        if self.provide_feedback {
+            encoder.append_pair("ProvideFeedback", "true");
+        }
+
+        if let Some(validity_period) = self.validity_period {
+            encoder.append_pair("ValidityPeriod", &validity_period.to_string());
+        }
+
+
+        encoder.finish()
+    }
+}
+
 impl<'a> Messages<'a> {
 
     pub fn new(client: &'a Client) -> Messages {
@@ -162,6 +208,7 @@ impl<'a> Messages<'a> {
 
     /*
     pub fn send_message(message: &'a OutboundMessage) -> Box<Future<Item = Message, Error = ::TwilioError>> {
+
 
     }
     */

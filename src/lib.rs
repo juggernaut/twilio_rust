@@ -54,6 +54,10 @@ pub struct Page<T> {
     pub next_page_uri: Option<Uri>,
 }
 
+pub trait ToUrlEncoded {
+    fn to_url_encoded(&self) -> String;
+}
+
 impl Client {
     pub fn new(account_sid: &str, auth_token: &str, handle: &Handle) -> Result<Client, io::Error> {
         let client = hyper::Client::configure()

@@ -2,13 +2,12 @@ extern crate hyper;
 
 use std::str;
 use std::fmt::{Display, Result};
-use ::Client;
+use ::{Client, ToUrlEncoded};
 use rfc2822;
 use rfc2822::opt_deserialize;
 use serde_json;
 use chrono::prelude::*;
-use futures::future;
-use futures::{Future, Stream};
+use futures::{Future, future};
 use hyper::{Body, Method, Request, Uri};
 use hyper::header::{ContentType, ContentLength};
 use hyper::error::Error;
@@ -131,11 +130,6 @@ impl ModifyCallStatus {
             ModifyCallStatus::Completed => "completed",
         }
     }
-}
-
-
-pub trait ToUrlEncoded {
-    fn to_url_encoded(&self) -> String;
 }
 
 pub struct OutboundCall<'a> {
