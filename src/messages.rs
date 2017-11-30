@@ -6,6 +6,8 @@ use url::{form_urlencoded, Url};
 use chrono::prelude::*;
 use rfc2822;
 use rfc2822::opt_deserialize;
+use hyper::{Body, Method, Request, Uri};
+use hyper::header::{ContentType, ContentLength};
 use futures::{Future, future};
 
 pub struct Messages<'a> {
@@ -35,6 +37,7 @@ pub enum MessageDirection {
     OutboundReply,
 }
 
+
 #[derive(Deserialize)]
 pub struct Message {
     pub sid: String,
@@ -42,8 +45,8 @@ pub struct Message {
     pub messaging_service_sid: Option<String>,
     pub from: String,
     pub to: String,
-    pub body: String, // XXX: does this work for utf-8?
-    pub num_segments: Option<u32>,
+    pub body: String,
+    #[serde(deserialize_with = "rfc2822::deserialize_str_to_u32")] pub num_segments: Option<u32>,
     pub status: MessageStatus,
     pub error_code: Option<String>,
     pub error_message: Option<String>,
@@ -206,10 +209,16 @@ impl<'a> Messages<'a> {
         Messages { client }
     }
 
-    /*
-    pub fn send_message(message: &'a OutboundMessage) -> Box<Future<Item = Message, Error = ::TwilioError>> {
-
-
+    pub fn send_message(&self, message: &'a OutboundMessage) -> Box<Future<Item = Message, Error = ::TwilioError>> {
+        let encoded_params = message.to_url_encoded();
+        let uri = format!(
+            "{}/2010-04-01/Accounts/{}/Messages.json",
+            ::BASE_URI,
+            self.client.account_sid).parse().unwrap();
+        let mut req = Request::new(Method::Post, uri);
+        req.headers_mut().set(ContentType::form_url_encoded());
+        req.headers_mut().set(ContentLength(encoded_params.len() as u64));
+        req.set_body(encoded_params.into_bytes());
+        self.client.make_req(req)
     }
-    */
 }

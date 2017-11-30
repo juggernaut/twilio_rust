@@ -341,15 +341,15 @@ impl<'a> Calls<'a> {
     }
 
     pub fn make_call(&self, outbound_call: &OutboundCall) -> Box<Future<Item = Call, Error = ::TwilioError>> {
-        let url_encoded = outbound_call.to_url_encoded();
+        let encoded_params = outbound_call.to_url_encoded();
         let uri = format!(
             "{}/2010-04-01/Accounts/{}/Calls.json",
             ::BASE_URI,
             self.client.account_sid).parse().unwrap();
         let mut req = Request::new(Method::Post, uri);
         req.headers_mut().set(ContentType::form_url_encoded());
-        req.headers_mut().set(ContentLength(url_encoded.len() as u64));
-        req.set_body(url_encoded.into_bytes());
+        req.headers_mut().set(ContentLength(encoded_params.len() as u64));
+        req.set_body(encoded_params.into_bytes());
         self.client.make_req(req)
     }
 

@@ -13,6 +13,7 @@ use futures::{Future, Stream};
 use futures::future;
 use twilio_rust::{Client, Page};
 use twilio_rust::calls::{Calls, OutboundCall, OutboundCallBuilder, CallbackMethod};
+use twilio_rust::messages::{Messages, OutboundMessageBuilder, MessageFrom};
 use tokio_core::reactor::Core;
 use chrono::prelude::*;
 use url::Url;
@@ -44,6 +45,7 @@ fn main() {
 	let mut core = Core::new().unwrap();
 	let client = Client::new_from_env(&core.handle()).unwrap();
 	let calls = Calls::new(&client);
+    // Get a call by call sid
     /*
 	let work = calls
 		.get_call("CA166b2ee048446651bfccad9cdba48418")
@@ -60,13 +62,18 @@ fn main() {
 			()
 		});
 	*/
+
+    // Make outbound call
+    /*
     let cb_url = Url::parse("https://handler.twilio.com/twiml/EHd118e2828f407106025378a044a91f26").unwrap();
     let fallback_url = Url::parse("https://www.example.com").unwrap();
 	let outbound_call = OutboundCallBuilder::new("+15103674994", "+19493102155", &cb_url)
         .with_fallback_url(&fallback_url)
         .build();
 	let work = calls.make_call(&outbound_call);
+	*/
 
+    // Get a calls list (paging)
     /*
     let work = calls.get_calls_with_page_size(5)
         .and_then(|page| {
@@ -84,14 +91,28 @@ fn main() {
             ()
         });
     */
+
+    // Make a call, then redirect
+    /*
 	let queued_call = core.run(work).unwrap();
 
     thread::sleep(time::Duration::from_secs(15));
 
     let redirect_url = Url::parse("https://handler.twilio.com/twiml/EH09759ae9d76da9df9ce95c3a91fd3b73").unwrap();
     let work = calls.redirect_call(&queued_call.sid, &redirect_url, Some(CallbackMethod::Post));
+    */
 
-    core.run(work).unwrap();
+    let outbound_sms = OutboundMessageBuilder::new_sms(
+        MessageFrom::From("+14088377998"),
+        "+19493102155",
+        "Hi from rust!"
+    ).build();
+
+    let messages = Messages::new(&client);
+    let work =  messages.send_message(&outbound_sms);
+
+    let msg = core.run(work).unwrap();
+    println!("Sent message {}", msg.sid);
 
 
 }
