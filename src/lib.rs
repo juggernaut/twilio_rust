@@ -91,7 +91,6 @@ impl Client {
         let fut = self.send_request(req)
             .map_err(|err| TwilioError::Hyper(err))
             .and_then(|res| {
-                println!("Response: {}", res.status());
                 match res.status() {
                     StatusCode::Ok | StatusCode::Created => future::ok(res),
                     _  => future::err(TwilioError::BadResponse(res)),
@@ -102,7 +101,6 @@ impl Client {
             })
             .and_then(move |body| {
                 let debug_str = str::from_utf8(&body).unwrap();
-                println!("DEBUG: body is {}", debug_str);
                 let call_res = serde_json::from_slice(&body).map_err(|err| TwilioError::Serde(err));
                 future::result(call_res)
             });
@@ -113,12 +111,10 @@ impl Client {
         let fut = self.send_request(req)
             .map_err(|err| TwilioError::Hyper(err))
             .and_then(|res| {
-                println!("Response: {}", res.status());
                 res.body().concat2().map_err(|err| TwilioError::Hyper(err))
             })
             .and_then(move |body| {
                 let debug_str = str::from_utf8(&body).unwrap();
-                println!("DEBUG: body is {}", debug_str);
                 let call_res: Result<Value, TwilioError> = serde_json::from_slice(&body)
                     .map_err(|err| TwilioError::Serde(err));
                 let final_res = call_res.and_then(move|v| {
