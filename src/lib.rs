@@ -13,17 +13,12 @@ use std::str;
 use std::str::FromStr;
 use std::option::Option;
 use std::env;
-use std::error::Error;
-use std::process;
-use std::thread;
-use std::sync::mpsc;
-use std::io::{self, Write};
+use std::io;
 use futures::{Future, Stream, future};
-use tokio_core::reactor::{Core, Handle, Remote};
-use chrono::prelude::*;
+use tokio_core::reactor::Handle;
 use hyper::client::{FutureResponse, HttpConnector};
 use hyper_tls::HttpsConnector;
-use hyper::{Body, Method, Request, Uri, StatusCode};
+use hyper::{Body, Request, Uri, StatusCode};
 use hyper::header::{Authorization, Basic};
 use serde_json::value::Value;
 
@@ -37,7 +32,6 @@ mod serde_helper;
 pub struct Client {
     account_sid: String,
     auth_token: String,
-    handle: Handle,
     client: hyper::Client<HttpsConnector<HttpConnector>, Body>,
 }
 
@@ -66,7 +60,6 @@ impl Client {
         Ok(Client {
             account_sid: account_sid.to_string(),
             auth_token: auth_token.to_string(),
-            handle: handle.clone(),
             client: client,
         })
     }
@@ -85,7 +78,7 @@ impl Client {
         self.client.request(req)
     }
 
-    fn make_req<'de, T>(&self, mut req: Request<Body>) -> Box<Future<Item = T, Error = TwilioError> + 'de>
+    fn make_req<'de, T>(&self, req: Request<Body>) -> Box<Future<Item = T, Error = TwilioError> + 'de>
     where T: 'de + serde::de::DeserializeOwned
     {
         let fut = self.send_request(req)
@@ -100,21 +93,19 @@ impl Client {
                 res.body().concat2().map_err(|err| TwilioError::Hyper(err))
             })
             .and_then(move |body| {
-                let debug_str = str::from_utf8(&body).unwrap();
                 let call_res = serde_json::from_slice(&body).map_err(|err| TwilioError::Serde(err));
                 future::result(call_res)
             });
         Box::new(fut)
     }
 
-    fn get_page(&self, mut req: Request<Body>) -> Box<Future<Item = Page<calls::Call>, Error = TwilioError>> {
+    fn get_page(&self, req: Request<Body>) -> Box<Future<Item = Page<calls::Call>, Error = TwilioError>> {
         let fut = self.send_request(req)
             .map_err(|err| TwilioError::Hyper(err))
             .and_then(|res| {
                 res.body().concat2().map_err(|err| TwilioError::Hyper(err))
             })
             .and_then(move |body| {
-                let debug_str = str::from_utf8(&body).unwrap();
                 let call_res: Result<Value, TwilioError> = serde_json::from_slice(&body)
                     .map_err(|err| TwilioError::Serde(err));
                 let final_res = call_res.and_then(move|v| {

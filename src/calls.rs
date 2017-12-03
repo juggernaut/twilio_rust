@@ -1,16 +1,12 @@
 extern crate hyper;
 
 use std::str;
-use std::fmt::{Display, Result};
 use ::{Client, ToUrlEncoded};
 use serde_helper;
-use serde_helper::opt_deserialize;
-use serde_json;
 use chrono::prelude::*;
 use futures::{Future, future};
-use hyper::{Body, Method, Request, Uri};
+use hyper::{Body, Method, Request};
 use hyper::header::{ContentType, ContentLength};
-use hyper::error::Error;
 use url::{form_urlencoded, Url};
 
 pub struct Calls<'a> {
@@ -336,7 +332,7 @@ impl<'a> Calls<'a> {
             call_sid
         ).parse()
             .unwrap();
-        let mut req: Request<Body> = Request::new(Method::Get, uri);
+        let req: Request<Body> = Request::new(Method::Get, uri);
         self.client.make_req(req)
     }
 
@@ -358,7 +354,7 @@ impl<'a> Calls<'a> {
             "{}/2010-04-01/Accounts/{}/Calls.json",
             ::BASE_URI,
             self.client.account_sid).parse().unwrap();
-        let mut req = Request::new(Method::Get, uri);
+        let req = Request::new(Method::Get, uri);
         self.client.get_page(req)
     }
 
@@ -367,14 +363,14 @@ impl<'a> Calls<'a> {
             "{}/2010-04-01/Accounts/{}/Calls.json?PageSize={}",
             ::BASE_URI,
             self.client.account_sid, page_size).parse().unwrap();
-        let mut req = Request::new(Method::Get, uri);
+        let req = Request::new(Method::Get, uri);
         self.client.get_page(req)
     }
 
     pub fn get_next_page(&self, page: &::Page<Call>) -> Box<Future<Item = Option<::Page<Call>>, Error = ::TwilioError>> {
         match page.next_page_uri.as_ref() {
             Some(uri) => {
-                let mut req = Request::new(Method::Get, uri.clone());
+                let req = Request::new(Method::Get, uri.clone());
                 Box::new(self.client.get_page(req).map(|p| Some(p)))
             },
             None => Box::new(future::ok(None))
@@ -425,7 +421,7 @@ mod test {
     #[test]
     fn test_url_encoding() {
         let url = Url::parse("http://www.example.com").unwrap();
-        let outbound_call = OutboundCall::new("tom", "jerry", &url);
+        let outbound_call = OutboundCallBuilder::new("tom", "jerry", &url).build();
         let url_encoded = outbound_call.to_url_encoded();
         assert_eq!("From=tom&To=jerry&Url=http%3A%2F%2Fwww.example.com%2F", &url_encoded);
     }
@@ -434,7 +430,7 @@ mod test {
     fn test_status_callback() {
         let url = Url::parse("http://www.example.com").unwrap();
         let events = [StatusCallbackEvent::Answered, StatusCallbackEvent::Ringing];
-        let mut outbound_call = OutboundCall::new("tom", "jerry", &url);
+        let mut outbound_call = OutboundCallBuilder::new("tom", "jerry", &url).build();
         outbound_call.set_status_callback_events(&events);
         let url_encoded = outbound_call.to_url_encoded();
         assert_eq!("From=tom&To=jerry&Url=http%3A%2F%2Fwww.example.com%2F\

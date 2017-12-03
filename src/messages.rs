@@ -1,14 +1,12 @@
 extern crate hyper;
 
-use serde_json;
 use ::{Client, ToUrlEncoded};
 use url::{form_urlencoded, Url};
 use chrono::prelude::*;
 use serde_helper;
-use serde_helper::opt_deserialize;
-use hyper::{Body, Method, Request, Uri};
+use hyper::{Method, Request};
 use hyper::header::{ContentType, ContentLength};
-use futures::{Future, future};
+use futures::Future;
 
 pub struct Messages<'a> {
     client: &'a Client,
