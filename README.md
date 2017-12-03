@@ -11,8 +11,15 @@ You will need your Twilio credentials first:
 export ACCOUNT_SID=<your account sid>
 export AUTH_TOKEN=<your auth token>
 ```
+To send an SMS, you will also need a "from" number i.e a valid callerId in your Twilio accout, and the "to" number i.e the number you want to send the message to:
+```bash
+export FROM_NUMBER=<a valid callerId in your account>
+export TO_NUMBER=<number you want to send message to>
+```
 
 ```rust
+let from_num = env::var("FROM_NUMBER").expect("FROM_NUMBER must be set to a valid caller ID for your account");
+let to_num = env::var("TO_NUMBER").expect("TO_NUMBER must be set to the number you want to send the message to");
 // Create the tokio event loop
 let mut core = Core::new().unwrap();
 
