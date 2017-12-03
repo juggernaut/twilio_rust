@@ -430,8 +430,9 @@ mod test {
     fn test_status_callback() {
         let url = Url::parse("http://www.example.com").unwrap();
         let events = [StatusCallbackEvent::Answered, StatusCallbackEvent::Ringing];
-        let mut outbound_call = OutboundCallBuilder::new("tom", "jerry", &url).build();
-        outbound_call.set_status_callback_events(&events);
+        let outbound_call = OutboundCallBuilder::new("tom", "jerry", &url)
+            .with_status_callback_events(&events)
+            .build();
         let url_encoded = outbound_call.to_url_encoded();
         assert_eq!("From=tom&To=jerry&Url=http%3A%2F%2Fwww.example.com%2F\
             &StatusCallbackEvent=answered&StatusCallbackEvent=ringing", &url_encoded);
