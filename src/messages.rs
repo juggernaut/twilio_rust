@@ -51,9 +51,9 @@ pub struct Message {
     pub direction: MessageDirection,
     pub price: Option<String>,
     pub price_unit: Option<String>,
-    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub date_created: Option<DateTime<Utc>>,
-    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub date_updated: Option<DateTime<Utc>>,
-    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub date_sent: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::deserialize_rfc2822")] pub date_created: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::deserialize_rfc2822")] pub date_updated: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::deserialize_rfc2822")] pub date_sent: Option<DateTime<Utc>>,
 }
 
 #[derive(Copy, Clone)]

@@ -31,10 +31,10 @@ pub struct Call {
     pub to_formatted: Option<String>,
     pub from_formatted: Option<String>,
     pub caller_name: Option<String>,
-    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub date_created: Option<DateTime<Utc>>,
-    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub date_updated: Option<DateTime<Utc>>,
-    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub start_time: Option<DateTime<Utc>>,
-    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub end_time: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::deserialize_rfc2822")] pub date_created: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::deserialize_rfc2822")] pub date_updated: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::deserialize_rfc2822")] pub start_time: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::deserialize_rfc2822")] pub end_time: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
