@@ -4,8 +4,8 @@ use serde_json;
 use ::{Client, ToUrlEncoded};
 use url::{form_urlencoded, Url};
 use chrono::prelude::*;
-use rfc2822;
-use rfc2822::opt_deserialize;
+use serde_helper;
+use serde_helper::opt_deserialize;
 use hyper::{Body, Method, Request, Uri};
 use hyper::header::{ContentType, ContentLength};
 use futures::{Future, future};
@@ -46,16 +46,16 @@ pub struct Message {
     pub from: String,
     pub to: String,
     pub body: String,
-    #[serde(deserialize_with = "rfc2822::deserialize_str_to_u32")] pub num_segments: Option<u32>,
+    #[serde(deserialize_with = "serde_helper::deserialize_str_to_u32")] pub num_segments: Option<u32>,
     pub status: MessageStatus,
     pub error_code: Option<String>,
     pub error_message: Option<String>,
     pub direction: MessageDirection,
     pub price: Option<String>,
     pub price_unit: Option<String>,
-    #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub date_created: Option<DateTime<Utc>>,
-    #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub date_updated: Option<DateTime<Utc>>,
-    #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub date_sent: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub date_created: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub date_updated: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub date_sent: Option<DateTime<Utc>>,
 }
 
 #[derive(Copy, Clone)]

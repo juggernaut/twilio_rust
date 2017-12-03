@@ -3,8 +3,8 @@ extern crate hyper;
 use std::str;
 use std::fmt::{Display, Result};
 use ::{Client, ToUrlEncoded};
-use rfc2822;
-use rfc2822::opt_deserialize;
+use serde_helper;
+use serde_helper::opt_deserialize;
 use serde_json;
 use chrono::prelude::*;
 use futures::{Future, future};
@@ -35,10 +35,10 @@ pub struct Call {
     pub to_formatted: Option<String>,
     pub from_formatted: Option<String>,
     pub caller_name: Option<String>,
-    #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub date_created: Option<DateTime<Utc>>,
-    #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub date_updated: Option<DateTime<Utc>>,
-    #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub start_time: Option<DateTime<Utc>>,
-    #[serde(deserialize_with = "rfc2822::opt_deserialize")] pub end_time: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub date_created: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub date_updated: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub start_time: Option<DateTime<Utc>>,
+    #[serde(deserialize_with = "serde_helper::opt_deserialize")] pub end_time: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
